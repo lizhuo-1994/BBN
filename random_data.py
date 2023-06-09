@@ -12,7 +12,8 @@ from variables import *
 node_values = copy.deepcopy(node_states)
 for node in node_states.keys():
     states = node_states[node]
-    data = np.random.choice(range(1, states + 1), size= 5)
+    p = np.random.dirichlet(np.ones(states))
+    data = np.random.choice(range(1, states + 1), size= 100, p = p)
     node_values[node] = data
 
 # data_list = []

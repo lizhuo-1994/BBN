@@ -74,3 +74,5 @@ model.add_edge("Day_of_Week", "Cheating_Indicator")
 model.add_edge("In_Season", "Cheating_Indicator")
 model.add_edge("Influence_by_Third_Party", "Cheating_Indicator")
 
+model.add_edge("Subjective_Temperature", "Cheating_Indicator")
+
