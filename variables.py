@@ -62,5 +62,5 @@ node_states = {
     'Degree_of_Thirst': 2, 
     'Long-Term_Stress_Level': 2, 
     'Supplement_Use': 2,
-    'Cheating_Indicator': 10
+    'Cheating_Indicator': 5
     }
