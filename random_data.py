@@ -16,7 +16,7 @@ for node in node_states.keys():
     data = np.random.choice(range(1, states + 1), size= 100, p = p)
     node_values[node] = data
 
-# data_list = []
+print(node_values)
 
 # for node in node_values:
 #     data_list.append(node_values[node])

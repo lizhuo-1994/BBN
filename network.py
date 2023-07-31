@@ -1,5 +1,6 @@
 from pgmpy.models import BayesianNetwork
 
+
 # Create a BayesianModel object
 model = BayesianNetwork()
 
