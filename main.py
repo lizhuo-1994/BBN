@@ -3,16 +3,16 @@ from pgmpy.inference import VariableElimination
 from pgmpy.independencies import Independencies
 from pgmpy.inference.EliminationOrder import WeightedMinFill
 import numpy as np
-from variables import nodes
-from random_data import node_values
+
+from data import node_value
 from network import model
 import pandas as pd
 
 ############# Build the network from data ################
-data = pd.DataFrame(data=node_values)
+data = pd.DataFrame(data=node_value)
 model.fit(data, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
-for cpd in model.get_cpds():
-    print(cpd)
+# for cpd in model.get_cpds():
+#     print(cpd)
 
 print(model.check_model())
 
@@ -20,12 +20,10 @@ print(model.check_model())
 
 ############# inference ################
 infer = VariableElimination(model)
-query = infer.query(variables=['Cheating_Indicator'], evidence={'Satisfaction_with_Reward': 1, 'Subjective_Stress_Level': 2})
-print(query)
-query = infer.query(variables=['Cheating_Indicator'], evidence={'Space_Size': 1})
+query = infer.query(variables=['Space_size'], evidence={'Cheating_indicator': 1})
 print(query)
 
-
+exit()
 ############# Variables Estimation ################
 # print(WeightedMinFill(model).get_elimination_order(model.nodes))
 
