@@ -56,9 +56,9 @@ mutual_info_list, mutual_node_list = zip(*sorted(zip(mutual_info_list, mutual_no
 for node, mutual_info in zip(mutual_node_list, mutual_info_list):
     print('mutual information==>\t', node, ':\t', mutual_info)
 
-############# network plot ################
-import networkx as nx
-import pylab as plt
-nx_graph = nx.DiGraph(model.edges())
-nx.draw(nx_graph, with_labels=True, pos=nx.spring_layout(nx_graph), width = 1, font_size = 10, arrowsize = 10, node_size=500, node_color = 'skyblue')
-plt.savefig("model.png")
+# ############# network plot ################
+# import networkx as nx
+# import pylab as plt
+# nx_graph = nx.DiGraph(model.edges())
+# nx.draw(nx_graph, with_labels=True, pos=nx.spring_layout(nx_graph), width = 1, font_size = 10, arrowsize = 10, node_size=500, node_color = 'skyblue')
+# plt.savefig("model.png")
