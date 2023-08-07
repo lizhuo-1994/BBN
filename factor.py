@@ -18,7 +18,6 @@ kmo_all,kmo_model=calculate_kmo(df_data)
 print('Bartlett analysis:\t', chi_square_value, p_value)
 print('KMO analysis:\t', kmo_all, kmo_model)
 
-
 ###################################### remove unimportant variables ##########################
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@ remove unimportant variables by correlation @@@@@@@@@@@@@@@@@@@#
 
@@ -84,22 +83,65 @@ print(dense_variables)
 ####### 2023.8.7 Li and Liu got ['Indoor_outdoor', 'Location_nature', 'Accessory', 'Drunkenness']
 ####### we decide to delete 'Indoor_outdoor', 'Location_nature', 'Accessory', 'Drunkenness'
 
-###################################### model the BBN ##########################
+###################################### model the BBN edges ##########################
+
+pvalue_rate = 0.05
+correlation_rate = 0.2
+
 from network import node_states
+from data import node_value
+delete_variables = overlap_variables + dense_variables
+for node in delete_variables:
+    del node_states[node]
+    del df_data[node]
+    del corr[node]
+    del pvalues[node]
+    del node_value[node]
+
+
+relation_list = []
+for node_i in corr.columns:
+    for node_j in corr.columns:
+        if node_i != node_j:
+            if pvalues[node_i][node_j] < pvalue_rate and abs(corr[node_i][node_j]) > correlation_rate:
+                # print(node_i, '@', node_j, corr[node_i][node_j], pvalues[node_i][node_j], '#' if pvalues[node_i][node_j] < 0.01 else '')
+                if node_j + '@' + node_i in relation_list:
+                    continue
+                relation_list.append(node_i + '@' + node_j)
+
+print('relation_list:\n', pprint.pprint(relation_list))
+
+
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ need manual identification of the relations @@@@@@@@@@@@@@@@@@@@@@#
+
+relation_dict = {
+    'Space_size': ['Amenity', 'Chronic_stress'],
+    'Socioeconomic_level': ['Space_size', 'Health_Status', 'Chronic_stress'],
+    'Location_familiarity': ['Exposure_degree'],
+    'Subjective_temperature': ['Amenity', 'Thirst_degree'],
+    'Chronic_stress': ['Amenity'],
+    'Clothing_type': ['Clothing_color'],
+    'Health_Status': ['Medicine', 'Chronic_stress'],
+    'Supplement': ['Medicine'],
+    'Sleepiness': ['Chronic_stress'],
+    'Dinner': ['Full_stomach'],
+    'Thirst_degree': ['Urge_to_urinate', 'Chronic_stress']
+}
+
+for node in node_states:
+    if node in relation_dict.keys():
+        node_states[node]['next_nodes'] = relation_dict[node]
+    else:
+        node_states[node]['next_nodes'] = node_states[node]['next_nodes'] 
+
+node_states['Cheating_indicator']['next_nodes'] = []
+
 from pgmpy.estimators import BayesianEstimator
 from pgmpy.inference import VariableElimination
 from pgmpy.independencies import Independencies
 from pgmpy.inference.EliminationOrder import WeightedMinFill
 from pgmpy.models import BayesianNetwork
 import numpy as np
-
-delete_variables = overlap_variables + dense_variables
-for node in delete_variables:
-    del node_states[node]
-    del df_data[node]
-
-
-print(len(node_states), df_data.shape)
 
 
 # Create a BayesianModel object
@@ -114,8 +156,62 @@ for node in node_states.keys():
             continue
         model.add_edge(node, next_node)
 
-model.fit(df_data, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
+model.add_node('Cheating_indicator')
+
+for e in model.edges:
+    print(e)
+
+############# network plot ################
+import networkx as nx
+import pylab as plt
+nx_graph = nx.DiGraph(model.edges())
+nx.draw(nx_graph, with_labels=True, pos=nx.spring_layout(nx_graph), width = 1, font_size = 2, arrowsize = 10, node_size=50, node_color = 'skyblue')
+plt.savefig("model.pdf")
+
+
+data = pd.DataFrame(data=node_value)
+model.fit(data, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
 # for cpd in model.get_cpds():
 #     print(cpd)
 
 print(model.check_model())
+
+
+
+############# inference ################
+infer = VariableElimination(model)
+# query = infer.query(variables=['Space_size'], evidence={'Cheating_indicator': 1})
+# print(query)
+
+
+def mutual_information(variable1, variable2):
+    query1 = infer.query(variables=[variable1], joint=True)
+    query2 = infer.query(variables=[variable2], joint=True)
+    query_joint = infer.query(variables=[variable1, variable2], joint=True)
+    p_variable1 = query1.values
+    p_variable2 = query2.values
+    p_joint = query_joint.values
+
+    mi = 0
+    for i in range(len(p_variable1)):
+        for j in range(len(p_variable2)):
+            mi += p_joint[i,j] * np.log(p_joint[i,j] / (p_variable1[i] * p_variable2[j]))
+    return mi
+
+# print('the mutual information between Space_size and Cheating_indicator', mutual_information('Space_size', 'Cheating_indicator'))
+# print('the mutual information between Chronic_stress and Cheating_indicator', mutual_information('Chronic_stress', 'Cheating_indicator'))
+# print('the mutual information between Amenity and Cheating_indicator', mutual_information('Amenity', 'Cheating_indicator'))
+
+mutual_info_list = []
+mutual_node_list = []
+for node in model.nodes():
+    if node == 'Cheating_indicator':
+        continue
+    mutual_info = mutual_information(node, 'Cheating_indicator')
+    mutual_node_list.append(node)
+    mutual_info_list.append(mutual_info)
+
+mutual_info_list, mutual_node_list = zip(*sorted(zip(mutual_info_list, mutual_node_list)))
+
+for node, mutual_info in zip(mutual_node_list, mutual_info_list):
+    print('mutual information==>\t', node, ':\t', mutual_info)

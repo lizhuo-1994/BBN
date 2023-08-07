@@ -15,7 +15,13 @@ with open('data2.csv','rt') as f:
         data_point = dict()
         for i in range(1, 37):
             data_point['Q' + str(i)] = int(row['Q' + str(i)])
-        data_point['diff_coin_resp'] = int(row['coin_real_resp'])
+        if int(row['diff_coin_resp']) < 0:
+            ret = -1
+        elif int(row['diff_coin_resp']) == 0:
+            ret = 0
+        else:
+            ret = 1
+        data_point['diff_coin_resp'] = ret
         data_list.append(data_point) 
 
 data_value = dict()
