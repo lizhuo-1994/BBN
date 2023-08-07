@@ -80,26 +80,26 @@ node_states = {
         'states': 4,
         'next_nodes': ['Subjective_temperature']
     },
-    # 'Clothing_type': {
-    #     'name': 'Q17',
-    #     'states': 2,
-    #     'next_nodes': ['Cheating_indicator']
-    # },
-    # 'Clothing_color': {
-    #     'name': 'Q18',
-    #     'states': 4,
-    #     'next_nodes': ['Cheating_indicator']
-    # },
-    # 'Exposure_degree': {
-    #     'name': 'Q19',
-    #     'states': 5,
-    #     'next_nodes': ['Cheating_indicator']
-    # },
-    # 'Accessory': {
-    #     'name': 'Q20',
-    #     'states': 2,
-    #     'next_nodes': ['Cheating_indicator']
-    # },
+    'Clothing_type': {
+        'name': 'Q17',
+        'states': 2,
+        'next_nodes': ['Cheating_indicator']
+    },
+    'Clothing_color': {
+        'name': 'Q18',
+        'states': 4,
+        'next_nodes': ['Cheating_indicator']
+    },
+    'Exposure_degree': {
+        'name': 'Q19',
+        'states': 5,
+        'next_nodes': ['Cheating_indicator']
+    },
+    'Accessory': {
+        'name': 'Q20',
+        'states': 2,
+        'next_nodes': ['Cheating_indicator']
+    },
     'Health_Status': {
         'name': 'Q21',
         'states': 4,
@@ -115,26 +115,26 @@ node_states = {
         'states': 2,
         'next_nodes': ['Chronic_stress']
     },
-    # 'Drinking_habits': {
-    #     'name': 'Q24',
-    #     'states': 4,
-    #     'next_nodes': ['Accessory', 'Drunkenness']
-    # },
+    'Drinking_habits': {
+        'name': 'Q24',
+        'states': 4,
+        'next_nodes': ['Accessory', 'Drunkenness']
+    },
     'Drunkenness': {
         'name': 'Q25',
         'states': 5,
         'next_nodes': ['Cheating_indicator']
     },
-    # 'Average_sleeping_time': {
-    #     'name': 'Q26',
-    #     'states': 5,
-    #     'next_nodes': ['Sleeping_time']
-    # },
-    # 'Sleeping_time': {
-    #     'name': 'Q27',
-    #     'states': 5,
-    #     'next_nodes': ['Sleepiness']
-    # },
+    'Average_sleeping_time': {
+        'name': 'Q26',
+        'states': 5,
+        'next_nodes': ['Sleeping_time']
+    },
+    'Sleeping_time': {
+        'name': 'Q27',
+        'states': 5,
+        'next_nodes': ['Sleepiness']
+    },
     'Sleepiness': {
         'name': 'Q28',
         'states': 5,

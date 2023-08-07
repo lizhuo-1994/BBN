@@ -9,7 +9,7 @@ import pingouin as pg
 
 
 data_list = []
-with open('data.csv','rt') as f: 
+with open('data2.csv','rt') as f: 
     cr = csv.DictReader(f)
     for row in cr:
         data_point = dict()
@@ -45,12 +45,12 @@ for node in node_states.keys():
 #     print('spearmanr:\t', stats.spearmanr(data_value[node_states[node]['name']], data_value['diff_coin_resp']))
 #     print('==================================================================')
 
-df = pd.DataFrame(node_value)   
-for node_i in node_value.keys():
-    for node_j in node_value.keys():
-        if node_i != node_j and node_i != 'Cheating_indicator' and node_j != 'Cheating_indicator':
-            print(node_i + '+' + node_j, '->', 'Cheating_indicator:')
-            print(pg.partial_corr(data=df, x=[node_i, node_j], y='Cheating_indicator', method='pearson'))
-            print(pg.partial_corr(data=df, x=[node_i, node_j], y='Cheating_indicator', method='spearman'))
-            print('==================================================================')
+df_data = pd.DataFrame(node_value)   
+# for node_i in node_value.keys():
+#     for node_j in node_value.keys():
+#         if node_i != node_j and node_i != 'Cheating_indicator' and node_j != 'Cheating_indicator':
+#             print(node_i + '+' + node_j, '->', 'Cheating_indicator:')
+#             print(pg.partial_corr(data=df, x=[node_i, node_j], y='Cheating_indicator', method='pearson'))
+#             print(pg.partial_corr(data=df, x=[node_i, node_j], y='Cheating_indicator', method='spearman'))
+#             print('==================================================================')
 
