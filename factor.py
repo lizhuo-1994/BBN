@@ -12,8 +12,8 @@ from factor_analyzer.factor_analyzer import calculate_kmo
 ###################################### suitability of data for factor analysis
 chi_square_value, p_value = calculate_bartlett_sphericity(df_data)
 kmo_all,kmo_model=calculate_kmo(df_data)
-print('Bartlett analysis:\t', chi_square_value, p_value)
-print('KMO analysis:\t', kmo_all, kmo_model)
+# print('Bartlett analysis:\t', chi_square_value, p_value)
+# print('KMO analysis:\t', kmo_all, kmo_model)
 
 ###################################### remove unimportant variables ##########################
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@ remove unimportant variables by correlation @@@@@@@@@@@@@@@@@@@#
