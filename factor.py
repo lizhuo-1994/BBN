@@ -105,7 +105,7 @@ for node_i in corr.columns:
                     continue
                 relation_list.append(node_i + '@' + node_j)
 
-# print('relation_list:\n', pprint.pprint(relation_list))
+print('relation_list:\n', pprint.pprint(relation_list))
 
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ need manual identification of the relations @@@@@@@@@@@@@@@@@@@@@@#
@@ -215,3 +215,26 @@ mutual_info_list, mutual_node_list = zip(*sorted(zip(mutual_info_list, mutual_no
 
 for node, mutual_info in zip(mutual_node_list, mutual_info_list):
     print('mutual information==>\t', node, ':\t', mutual_info)
+
+
+from data import df_test_data
+
+test_data = dict()
+for node in model.nodes:
+    test_data[node] = df_test_data[node]
+
+total_test_num = df_test_data.shape[0]
+correct_num = 0
+
+for i in range(df_test_data.shape[0]):
+    data_point = dict()
+    for node in model.nodes:
+        if node == 'Cheating_indicator':
+            continue
+        data_point[node] = test_data[node][i]
+    query = infer.query(variables=['Cheating_indicator'], evidence=data_point)
+    probs, states = zip(*sorted(zip(query.values.tolist(), query.state_names["Cheating_indicator"])))
+    if states[-1] == test_data["Cheating_indicator"][i]:
+        correct_num += 1
+
+print("Our BBN model exhibits {} accuracy.".format(correct_num / total_test_num))

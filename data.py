@@ -24,39 +24,32 @@ with open('data3.csv','rt') as f:
         data_point['diff_coin_resp'] = int(row['diff_coin_resp'])
         data_list.append(data_point) 
 
+
+training_list = data_list[: int(0.7 * len(data_list))]
+test_list     = data_list[int(0.7 * len(data_list)): ]
+
+
 data_value = dict()
-for key in data_list[0].keys():
+for key in training_list[0].keys():
     data_value[key] = []
-    for data_point in data_list:
+    for data_point in training_list:
         data_value[key].append(data_point[key])
-
-
-# print(data_value['diff_coin_resp'], set(data_value['diff_coin_resp']))
-# exit()
 
 node_value = dict()
 for node in node_states.keys():
     node_value[node] = np.array(data_value[node_states[node]['name']])
-    
-
-
-# for node in node_states.keys():
-#     if node == 'Cheating_indicator':
-#         continue
-#     print(node, '- Cheating_indicator:')
-#     # print(data_value[node_states[node]['name']])
-#     # print(data_value['diff_coin_resp'])
-#     print('kendalltau:\t', stats.kendalltau(data_value[node_states[node]['name']], data_value['diff_coin_resp']))
-#     print('pearsonr:\t', stats.pearsonr(data_value[node_states[node]['name']], data_value['diff_coin_resp']))
-#     print('spearmanr:\t', stats.spearmanr(data_value[node_states[node]['name']], data_value['diff_coin_resp']))
-#     print('==================================================================')
 
 df_data = pd.DataFrame(node_value)   
-# for node_i in node_value.keys():
-#     for node_j in node_value.keys():
-#         if node_i != node_j and node_i != 'Cheating_indicator' and node_j != 'Cheating_indicator':
-#             print(node_i + '+' + node_j, '->', 'Cheating_indicator:')
-#             print(pg.partial_corr(data=df, x=[node_i, node_j], y='Cheating_indicator', method='pearson'))
-#             print(pg.partial_corr(data=df, x=[node_i, node_j], y='Cheating_indicator', method='spearman'))
-#             print('==================================================================')
+
+test_data = dict()
+for key in test_list[0].keys():
+    test_data[key] = []
+    for data_point in training_list:
+        test_data[key].append(data_point[key])
+
+test_value = dict()
+for node in node_states.keys():
+    test_value[node] = np.array(test_data[node_states[node]['name']])
+
+df_test_data = pd.DataFrame(test_value)  
 
