@@ -197,6 +197,6 @@ model = BayesianNetwork()
 for node in node_states.keys():
     model.add_node(node)    
     for next_node in node_states[node]['next_nodes']:
-        print(node, next_node)
+        # print(node, next_node)
         model.add_edge(node, next_node)
 

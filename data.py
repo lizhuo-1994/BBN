@@ -9,19 +9,19 @@ import pingouin as pg
 
 
 data_list = []
-with open('data2.csv','rt') as f: 
+with open('data3.csv','rt') as f: 
     cr = csv.DictReader(f)
     for row in cr:
         data_point = dict()
         for i in range(1, 37):
             data_point['Q' + str(i)] = int(row['Q' + str(i)])
-        if int(row['diff_coin_resp']) < 0:
-            ret = -1
-        elif int(row['diff_coin_resp']) == 0:
-            ret = 0
-        else:
-            ret = 1
-        data_point['diff_coin_resp'] = ret
+        # if int(row['diff_coin_resp']) < 0:
+        #     ret = -1
+        # elif int(row['diff_coin_resp']) == 0:
+        #     ret = 0
+        # else:
+        #     ret = 1
+        data_point['diff_coin_resp'] = int(row['diff_coin_resp'])
         data_list.append(data_point) 
 
 data_value = dict()

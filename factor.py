@@ -8,9 +8,6 @@ from factor_analyzer.factor_analyzer import calculate_bartlett_sphericity
 from factor_analyzer.factor_analyzer import calculate_kmo
 
 
-####################################### load data ##############################
-print(df_data.shape)
-
 
 ###################################### suitability of data for factor analysis
 chi_square_value, p_value = calculate_bartlett_sphericity(df_data)
@@ -48,15 +45,15 @@ for node in nodes:
 
 import pprint
 # pprint.pprint(correlation_dict)
-print('=======================================================================================')
+# print('=======================================================================================')
 sleected_correlation_dict = dict((k, v) for k, v in correlation_dict.items() if v[0] >= overlap_rate)
-pprint.pprint(sleected_correlation_dict)
+# pprint.pprint(sleected_correlation_dict)
 overlap_variables = [x.split('@')[0] for x in sleected_correlation_dict.keys()]
-print(overlap_variables)
+# print(overlap_variables)
 
 
-####### 2023.8.7 Li and Liu got [['Weekday', 'Time_zone'], ['Others_presence', 'Others_influence'], ['Average_sleeping_time', 'Sleeping_time'], ['Stress', 'Chronic_stress']]
-####### we decide to delete Weekday, Others_presence, Average_sleeping_time, Chronic_stress
+####### 2023.8.7 Li and Liu got [['Others_presence', 'Others_influence'], ['Average_sleeping_time', 'Sleeping_time'], ['Stress', 'Chronic_stress']]
+####### we decide to delete  Others_presence, Average_sleeping_time, Chronic_stress
 
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@ remove unimportant variables by data density @@@@@@@@@@@@@@@@@@@#
@@ -76,9 +73,9 @@ for node in df_data.columns:
     node_density_dict[node] = density
 
 sleected_density_dict = dict((k, v) for k, v in node_density_dict.items() if max(v.values()) >= density_rate)
-print(sleected_density_dict)
+# print(sleected_density_dict)
 dense_variables = list(sleected_density_dict.keys())
-print(dense_variables)
+# print(dense_variables)
 
 ####### 2023.8.7 Li and Liu got ['Indoor_outdoor', 'Location_nature', 'Accessory', 'Drunkenness']
 ####### we decide to delete 'Indoor_outdoor', 'Location_nature', 'Accessory', 'Drunkenness'
@@ -89,14 +86,13 @@ pvalue_rate = 0.05
 correlation_rate = 0.2
 
 from network import node_states
-from data import node_value
 delete_variables = overlap_variables + dense_variables
 for node in delete_variables:
     del node_states[node]
     del df_data[node]
     del corr[node]
     del pvalues[node]
-    del node_value[node]
+
 
 
 relation_list = []
@@ -109,32 +105,10 @@ for node_i in corr.columns:
                     continue
                 relation_list.append(node_i + '@' + node_j)
 
-print('relation_list:\n', pprint.pprint(relation_list))
+# print('relation_list:\n', pprint.pprint(relation_list))
 
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ need manual identification of the relations @@@@@@@@@@@@@@@@@@@@@@#
-
-relation_dict = {
-    'Space_size': ['Amenity', 'Chronic_stress'],
-    'Socioeconomic_level': ['Space_size', 'Health_Status', 'Chronic_stress'],
-    'Location_familiarity': ['Exposure_degree'],
-    'Subjective_temperature': ['Amenity', 'Thirst_degree'],
-    'Chronic_stress': ['Amenity'],
-    'Clothing_type': ['Clothing_color'],
-    'Health_Status': ['Medicine', 'Chronic_stress'],
-    'Supplement': ['Medicine'],
-    'Sleepiness': ['Chronic_stress'],
-    'Dinner': ['Full_stomach'],
-    'Thirst_degree': ['Urge_to_urinate', 'Chronic_stress']
-}
-
-for node in node_states:
-    if node in relation_dict.keys():
-        node_states[node]['next_nodes'] = relation_dict[node]
-    else:
-        node_states[node]['next_nodes'] = node_states[node]['next_nodes'] 
-
-node_states['Cheating_indicator']['next_nodes'] = []
 
 from pgmpy.estimators import BayesianEstimator
 from pgmpy.inference import VariableElimination
@@ -142,47 +116,73 @@ from pgmpy.independencies import Independencies
 from pgmpy.inference.EliminationOrder import WeightedMinFill
 from pgmpy.models import BayesianNetwork
 import numpy as np
+from data import node_value
 
+relation_dict = {
+    'Time_zone': ['Location'],
+    'Weekday': ['Location'],
+    'Location': ['Others_influence'],
+    'Shelter': ['Others_influence'],
+    'Brightness': ['Others_influence'],
+    'Others_influence': ['Cheating_indicator'],
+    # 'Clothing_type': ['Clothing_color'],
+    'Clothing_color': ['Cheating_indicator'],
+    # 'Period': ['Weather'],
+    'Weather': ['Amenity'],
+    # 'Dinner': ['Full_stomach'],
+    # 'Full_stomach': ['Thirst_degree'],
+    'Thirst_degree': ['Amenity'],
+    'Space_size':['Amenity'],
+    # 'Color_Temperature': ['Subjective_temperature'],
+    'Subjective_temperature': ['Cheating_indicator'],
+    'Satisfaction_with_reward': ['Socioeconomic_level'],
+    # 'Supplement': ['Medicine'],
+    'Medicine': ['Health_Status'],
+    'Drinking_habits': ['Health_Status'],
+    'Health_Status': ['Socioeconomic_level'],
+    'Socioeconomic_level': ['Cheating_indicator'],
+    'Amenity': ['Stress'],
+    'Stress': ['Cheating_indicator'],
+    # 'Sleeping_time': ['Sleepiness'],
+    'Sleepiness': ['Stress']
+}
 
 # Create a BayesianModel object
 model = BayesianNetwork()
 
 # Define the variables, Define the dependence
 
-for node in node_states.keys():
+for node in relation_dict.keys():
     model.add_node(node)    
-    for next_node in node_states[node]['next_nodes']:
-        if next_node in delete_variables:
-            continue
+    for next_node in relation_dict[node]:
         model.add_edge(node, next_node)
 
-model.add_node('Cheating_indicator')
+# ############# network plot ################
+# import networkx as nx
+# import pylab as plt
+# nx_graph = nx.DiGraph(model.edges())
+# nx.draw(nx_graph, with_labels=True, pos=nx.spring_layout(nx_graph), width = 1, font_size = 2, arrowsize = 10, node_size=50, node_color = 'skyblue')
+# plt.savefig("model.pdf")
 
-for e in model.edges:
-    print(e)
+data_dict = dict()
 
-############# network plot ################
-import networkx as nx
-import pylab as plt
-nx_graph = nx.DiGraph(model.edges())
-nx.draw(nx_graph, with_labels=True, pos=nx.spring_layout(nx_graph), width = 1, font_size = 2, arrowsize = 10, node_size=50, node_color = 'skyblue')
-plt.savefig("model.pdf")
+for node in model.nodes:
+    data_dict[node] = node_value[node]
 
-
-data = pd.DataFrame(data=node_value)
+data = pd.DataFrame(data=data_dict)
 model.fit(data, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
 # for cpd in model.get_cpds():
 #     print(cpd)
 
-print(model.check_model())
-
-
+# chi_square_value, p_value = calculate_bartlett_sphericity(data)
+# kmo_all,kmo_model=calculate_kmo(data)
+# print('Bartlett analysis:\t', chi_square_value, p_value)
+# print('KMO analysis:\t', kmo_all, kmo_model)
 
 ############# inference ################
 infer = VariableElimination(model)
 # query = infer.query(variables=['Space_size'], evidence={'Cheating_indicator': 1})
 # print(query)
-
 
 def mutual_information(variable1, variable2):
     query1 = infer.query(variables=[variable1], joint=True)
