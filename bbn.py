@@ -5,50 +5,12 @@ import numpy as np
 from data import all_data
 from sklearn.cluster import KMeans
 import pandas as pd
+from pgmpy.estimators import BayesianEstimator
+from pgmpy.inference import VariableElimination
+from pgmpy.independencies import Independencies
+from pgmpy.inference.EliminationOrder import WeightedMinFill
+from pgmpy.models import BayesianNetwork
 
-class AbstractModel():
-    def __init__(self):
-        self.initial = []
-        self.final = []
-
-class Grid(AbstractModel):
-    '''
-    Multiple DTMCs from a set of sets of traces
-    traces: a set of sets of traces
-    '''
-    def __init__(self, min_val, max_val, grid_num, clipped=True):
-        super().__init__()
-        self.min = min_val
-        self.max = max_val
-        self.k = grid_num
-        self.dim = max_val.shape[0]
-        self.total_states = pow(grid_num,self.dim)
-        self.unit = (max_val - min_val) / self.k
-        self.clipped = clipped
-        
-    def state_abstract(self, con_states):
-        con_states = con_states
-        lower_bound = self.min
-        upper_bound = self.max
-        unit = (upper_bound - lower_bound)/self.k
-        abs_states = np.zeros(con_states.shape[0],dtype=np.int8)
-        
-        #print(lower_bound)
-        #print(upper_bound)
-        indixes = np.where(unit == 0)[0]
-        unit[indixes] = 1
-        #print('unit:\t', unit)
-        
-        tmp = ((con_states-self.min)/unit).astype(int)
-        if self.clipped:
-            tmp = np.clip(tmp, 0, self.k-1)
-            
-        dims = tmp.shape[1]
-        for i in range(dims):
-            abs_states = abs_states + tmp[:,i]*pow(self.k, i)
-#         abs_states = np.expand_dims(abs_states,axis=-1)
-        abs_states = [str(item) for item in abs_states]
-        return abs_states
 
 groups = [
     ['Q1', 'Q2', 'Q3', 'Q16'],
@@ -118,22 +80,18 @@ abstract_states = {
     },
 }
 
-print(abstract_states)
-
-
-
 abstract_all_values = dict()
 for snode in abstract_states.keys():
 
-    min_state = np.array([0 for i in abstract_states[snode]['variables']])
-    max_state = np.array([i for i in abstract_states[snode]['value_states']])
+    # min_state = np.array([0 for i in abstract_states[snode]['variables']])
+    # max_state = np.array([i for i in abstract_states[snode]['value_states']])
 
-    grid_num = 2
-    grid = Grid(min_state, max_state, grid_num)  
+    # grid_num = 2
+    # grid = Grid(min_state, max_state, grid_num)  
     
     data = all_data[abstract_states[snode]['variables']]
     data = data.to_numpy()
-    state_ids = grid.state_abstract(data)
+    # state_ids = grid.state_abstract(data)
 
     # print(len(state_ids), len(set(state_ids)))
     # unique, counts = np.unique(state_ids, return_counts=True)
@@ -151,6 +109,82 @@ for snode in abstract_states.keys():
 abstract_all_values['Cheating_indicator'] = all_data['Cheating_indicator']
 abstract_all_values = pd.DataFrame(abstract_all_values)  
 print(abstract_all_values)
+
+
+#################################################### build model ##################################
+
+
+# Create a BayesianModel object
+model1 = BayesianNetwork()
+model2 = BayesianNetwork()
+
+# Define the variables, Define the dependence
+
+for snode in abstract_states.keys():
+    model1.add_node(snode)    
+    model1.add_edge(snode, 'Cheating_indicator')
+
+
+for snode in abstract_states.keys():
+    model2.add_node(snode)    
+model2.add_edge('Time and Environmental Factors', 'Social Interaction Factors')
+model2.add_edge('Social Interaction Factors', 'Cheating_indicator')
+model2.add_edge('Sleeping Pattern Factors', 'Environmental Comfort and Personal Perception Factors')
+model2.add_edge('Health Status Factors', 'Environmental Comfort and Personal Perception Factors')
+model2.add_edge('Personal Habits and Environment Interaction Factors', 'Environmental Comfort and Personal Perception Factors')
+model2.add_edge('Dietary and Satiety Factors', 'Environmental Comfort and Personal Perception Factors')
+model2.add_edge('Environmental Comfort and Personal Perception Factors', 'Cheating_indicator')
+model2.add_edge('Personal Dressing Factors', 'Cheating_indicator')
+
+# ############# network plot ################
+# import networkx as nx
+# import pylab as plt
+# nx_graph = nx.DiGraph(model.edges())
+# nx.draw(nx_graph, with_labels=True, pos=nx.spring_layout(nx_graph), width = 1, font_size = 2, arrowsize = 10, node_size=50, node_color = 'skyblue')
+# plt.savefig('model.pdf')
+
+model1.fit(abstract_all_values, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
+model2.fit(abstract_all_values, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
+
+
+model = model1
+
+############# inference ################
+infer = VariableElimination(model)
+# query = infer.query(variables=['Space_size'], evidence={'Cheating_indicator': 1})
+# print(query)
+
+def mutual_information(variable1, variable2):
+    query1 = infer.query(variables=[variable1], joint=True)
+    query2 = infer.query(variables=[variable2], joint=True)
+    query_joint = infer.query(variables=[variable1, variable2], joint=True)
+    p_variable1 = query1.values
+    p_variable2 = query2.values
+    p_joint = query_joint.values
+
+    mi = 0
+    for i in range(len(p_variable1)):
+        for j in range(len(p_variable2)):
+            mi += p_joint[i,j] * np.log(p_joint[i,j] / (p_variable1[i] * p_variable2[j]))
+    return mi
+
+# print('the mutual information between Space_size and Cheating_indicator', mutual_information('Space_size', 'Cheating_indicator'))
+# print('the mutual information between Chronic_stress and Cheating_indicator', mutual_information('Chronic_stress', 'Cheating_indicator'))
+# print('the mutual information between Amenity and Cheating_indicator', mutual_information('Amenity', 'Cheating_indicator'))
+
+mutual_info_list = []
+mutual_node_list = []
+for node in model.nodes():
+    if node == 'Cheating_indicator':
+        continue
+    mutual_info = mutual_information(node, 'Cheating_indicator')
+    mutual_node_list.append(node)
+    mutual_info_list.append(mutual_info)
+
+mutual_info_list, mutual_node_list = zip(*sorted(zip(mutual_info_list, mutual_node_list)))
+
+for node, mutual_info in zip(mutual_node_list, mutual_info_list):
+    print('mutual information==>\t', node, ':\t', mutual_info)
 
 
 
