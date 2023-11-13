@@ -52,7 +52,6 @@ with open('data4.csv', newline='') as f:
         cw.writeheader() 
         
         for row in data_list:
-            print(row)
             if row['randomID'] in error_ids:
                 continue
             cw.writerow(row)

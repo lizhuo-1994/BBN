@@ -9,7 +9,7 @@ import pingouin as pg
 
 
 data_list = []
-with open('data3.csv','rt') as f: 
+with open('data_4_processed.csv','rt') as f: 
     cr = csv.DictReader(f)
     for row in cr:
         data_point = dict()
@@ -52,4 +52,19 @@ for node in node_states.keys():
     test_value[node] = np.array(test_data[node_states[node]['name']])
 
 df_test_data = pd.DataFrame(test_value)  
+
+
+all_data_values = dict()
+for key in data_list[0].keys():
+    all_data_values[key] = []
+    for data_point in data_list:
+        all_data_values[key].append(data_point[key])
+
+
+all_data = dict()
+for node in node_states.keys():
+    all_data[node] = np.array(all_data_values[node_states[node]['name']])
+
+all_data = pd.DataFrame(all_data)  
+
 
