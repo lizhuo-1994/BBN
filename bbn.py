@@ -110,7 +110,9 @@ abstract_all_values['Cheating_indicator'] = all_data['Cheating_indicator']
 abstract_all_values = pd.DataFrame(abstract_all_values)  
 print(abstract_all_values)
 
+from sklearn.model_selection import train_test_split
 
+train, test = train_test_split(abstract_all_values, test_size=0.3, random_state=0)
 #################################################### build model ##################################
 
 
@@ -143,11 +145,11 @@ model2.add_edge('Personal Dressing Factors', 'Cheating_indicator')
 # nx.draw(nx_graph, with_labels=True, pos=nx.spring_layout(nx_graph), width = 1, font_size = 2, arrowsize = 10, node_size=50, node_color = 'skyblue')
 # plt.savefig('model.pdf')
 
-model1.fit(abstract_all_values, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
-model2.fit(abstract_all_values, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
+model1.fit(train, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
+model2.fit(train, estimator=BayesianEstimator, prior_type="BDeu") # default equivalent_sample_size=5
 
 
-model = model1
+model = model2
 
 ############# inference ################
 infer = VariableElimination(model)
@@ -187,6 +189,26 @@ for node, mutual_info in zip(mutual_node_list, mutual_info_list):
     print('mutual information==>\t', node, ':\t', mutual_info)
 
 
+################### cross validation################
+total_test_num = test.shape[0]
+correct_num = 0
+
+for i in range(test.shape[0]):
+    data_point = dict()
+    for node in model.nodes:
+        if node == 'Cheating_indicator':
+            continue
+        data_point[node] = test[node].values[i]
+    query = infer.query(variables=['Cheating_indicator'], evidence=data_point)
+    probs, states = zip(*sorted(zip(query.values.tolist(), query.state_names["Cheating_indicator"])))
+    predict = states[-1]
+    target = test["Cheating_indicator"].values[i]
+    print(predict, target)
+    # if abs(predict - target) <= 6:
+    if predict == target:
+        correct_num += 1
+
+print("Our BBN model exhibits {} accuracy.".format(correct_num / total_test_num))
 
     
 
